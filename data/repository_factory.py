@@ -31,7 +31,6 @@ def get_repository() -> StudentRepositoryInterface:
         json_path = os.getenv("JSON_PATH", "students.json")
 
         print(f"Using JSON Repository -> {json_path}")
-
         return StudentRepositoryJSON(json_path)
 
     sqlite_path = os.getenv("SQLITE_PATH", "students.db")

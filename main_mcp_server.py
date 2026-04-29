@@ -12,4 +12,5 @@ print(f"MCP_PORT loaded: {PORT}")
 print("Transport: SSE")
 print("=" * 40)
 
-mcp.run(transport="sse", port=PORT)
+#mcp.run(transport="sse", port=PORT)
+mcp.run(transport="http", host="0.0.0.0", port=PORT)

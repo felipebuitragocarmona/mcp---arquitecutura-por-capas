@@ -1,9 +1,14 @@
 from fastmcp import FastMCP
 from business.student_service import StudentService
 from models.dto.student_dto import StudentCreate
+from data.repository_factory import get_repository
 
 mcp = FastMCP("students")
-service = StudentService()
+
+# Obtener la implementación de repositorio según la configuración (.env)
+repo = get_repository()
+
+service = StudentService(repo=repo)
 
 
 @mcp.tool()
@@ -69,3 +74,13 @@ async def get_stats():
         Dictionary containing database statistics.
     """
     return service.get_stats()
+
+@mcp.tool()
+async def get_version():
+    """
+    Retrieve the current version of the academic system service.
+
+    Returns:
+        str: Current application version.
+    """
+    return "2.0.5"

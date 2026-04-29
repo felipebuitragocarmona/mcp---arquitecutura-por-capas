@@ -15,6 +15,7 @@ class StudentService:
 
     def __init__(self, repo: StudentRepositoryInterface | None = None) -> None:
         # Inyectar la implementación de persistencia (SQLite por defecto)
+        print("Tipo de repositorio ",type(repo))
         self.repo: StudentRepositoryInterface = repo if repo is not None else StudentRepositorySQLite()
 
     def _next_id(self, students: List[Dict[str, Any]]) -> int:
@@ -69,6 +70,8 @@ class StudentService:
         return StudentDTO(**self._to_dict(entity))
 
     def list_students(self) -> List[StudentDTO]:
+        print("Listando estudiantes con el repo")
+        print(type(self.repo))
         return [StudentDTO(**s) for s in self.repo.get_all()]
 
     def get_stats(self) -> Dict[str, Any]:
