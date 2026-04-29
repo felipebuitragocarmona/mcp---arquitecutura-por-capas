@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "JSON",
+    "email": "json@example.com",
+    "age": 22,
+    "career": "Fisica",
+    "semester": 4,
+    "created_at": "2026-04-29T09:59:47.354603"
+  },
+  {
+    "id": 2,
+    "name": "Felipe",
+    "email": "felipe.buitrago@ucaldas.edu.co",
+    "age": 29,
+    "career": "Ingeniería de Sistemas",
+    "semester": 10,
+    "created_at": "2026-04-29T11:35:41.815112"
+  }
+]
