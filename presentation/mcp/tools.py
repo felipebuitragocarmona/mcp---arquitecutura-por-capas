@@ -83,4 +83,4 @@ async def get_version():
     Returns:
         str: Current application version.
     """
-    return "2.0.5"
+    return "1.0.1"
