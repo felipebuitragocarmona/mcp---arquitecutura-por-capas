@@ -84,3 +84,63 @@ async def get_version():
         str: Current application version.
     """
     return "1.0.1"
+
+@mcp.tool()
+def dashboard() -> str:
+    """Genera un dashboard HTML con notas, asistencia y evolución histórica."""
+
+    html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+              <style>
+                body  { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+                .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                .card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+              </style>
+            </head>
+            <body>
+              <h2>Dashboard Académico</h2>
+              <div class="grid">
+                <div class="card"><canvas id="notas"></canvas></div>
+                <div class="card"><canvas id="asistencia"></canvas></div>
+                <div class="card" style="grid-column: span 2"><canvas id="historial"></canvas></div>
+              </div>
+              <script>
+                new Chart(document.getElementById("notas"), {
+                  type: "bar",
+                  data: {
+                    labels: ["Cálculo","Física","Prog.","Inglés","Estadística"],
+                    datasets: [{ label: "Notas", data: [3.8,4.2,4.9,3.5,4.1],
+                      backgroundColor: "rgba(54,162,235,0.7)" }]
+                  },
+                  options: { plugins: { title: { display: true, text: "Notas por Materia" }},
+                             scales: { y: { min: 0, max: 5 }}}
+                });
+            
+                new Chart(document.getElementById("asistencia"), {
+                  type: "doughnut",
+                  data: {
+                    labels: ["Asistió","Faltó"],
+                    datasets: [{ data: [88, 12],
+                      backgroundColor: ["rgba(75,192,192,0.7)","rgba(255,99,132,0.7)"] }]
+                  },
+                  options: { plugins: { title: { display: true, text: "Asistencia Global (%)" }}}
+                });
+            
+                new Chart(document.getElementById("historial"), {
+                  type: "line",
+                  data: {
+                    labels: ["2023-1","2023-2","2024-1","2024-2","2025-1"],
+                    datasets: [{ label: "Promedio Semestral", data: [3.4,3.6,3.5,3.9,4.1],
+                      borderColor: "rgba(153,102,255,1)", tension: 0.3, fill: false }]
+                  },
+                  options: { plugins: { title: { display: true, text: "Evolución Histórica" }},
+                             scales: { y: { min: 2.5, max: 5 }}}
+                });
+              </script>
+            </body>
+            </html>
+            """
+    return html

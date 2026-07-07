@@ -43,7 +43,7 @@ class JSONRepositoryFactory(RepositoryFactory):
 # Registro de factories disponibles — agregar uno nuevo no toca lógica existente
 FACTORIES: dict[str, type[RepositoryFactory]] = {
     "sqlite": SQLiteRepositoryFactory,
-    "json": JSONRepositoryFactory,
+    "json": JSONRepositoryFactory
 }
 
 
