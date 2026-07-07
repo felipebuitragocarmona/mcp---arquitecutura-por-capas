@@ -1,6 +1,6 @@
 from fastmcp import FastMCP
 from business.student_service import StudentService
-from models.dto.student_dto import StudentCreate
+from models.dto.student_dto import StudentCreate, StudentUpdate
 from data.repository_factory import get_repository
 
 mcp = FastMCP("students")
@@ -74,6 +74,64 @@ async def get_stats():
         Dictionary containing database statistics.
     """
     return service.get_stats()
+
+
+@mcp.tool()
+async def update_student(
+    student_id: int,
+    name: str | None = None,
+    email: str | None = None,
+    age: int | None = None,
+    career: str | None = None,
+    semester: int | None = None,
+  ):
+    """
+    Update an existing student with partial data.
+
+    Parameters:
+      student_id (int): Identifier of the student to update.
+      name (str | None): New full name.
+      email (str | None): New email address.
+      age (int | None): New age.
+      career (str | None): New academic career.
+      semester (int | None): New semester.
+
+    Returns:
+      Updated student information or an error dictionary.
+    """
+    try:
+      payload = {
+        "name": name,
+        "email": email,
+        "age": age,
+        "career": career,
+        "semester": semester,
+      }
+      payload = {k: v for k, v in payload.items() if v is not None}
+      if not payload:
+        return {"error": "No se enviaron campos para actualizar"}
+
+      student_update = StudentUpdate(**payload)
+      return service.update_student(student_id, student_update)
+    except Exception as e:
+      return {"error": str(e), "type": type(e).__name__}
+
+
+@mcp.tool()
+async def delete_student(student_id: int):
+    """
+    Delete a student by id.
+
+    Parameters:
+      student_id (int): Identifier of the student to delete.
+
+    Returns:
+      Dictionary indicating deletion status or error details.
+    """
+    try:
+      return service.delete_student(student_id)
+    except Exception as e:
+      return {"error": str(e), "type": type(e).__name__}
 
 @mcp.tool()
 async def get_version():

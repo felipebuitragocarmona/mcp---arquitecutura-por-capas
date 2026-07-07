@@ -61,7 +61,7 @@ class StudentRepositorySQLite(StudentRepositoryInterface):
         cols = ["id","name","email","age","career","semester","created_at"]
         return dict(zip(cols, row))
 
-    def update(self, student_id, new_data):
+    def update(self, student_id: int, new_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         cur = self.conn.cursor()
         fields = []
         values = []
@@ -70,21 +70,15 @@ class StudentRepositorySQLite(StudentRepositoryInterface):
                 fields.append(f"{k}=?")
                 values.append(new_data[k])
         if not fields:
-            return False
-        # Resolver la fila objetivo: prefiera la fila que ya tiene el email nuevo (si aplica)
-        sql = f"UPDATE students SET {', '.join(fields)} WHERE id=?"
-        target_id = student_id
-        if "email" in new_data:
-            cur.execute("SELECT id FROM students WHERE email=?", (new_data["email"],))
-            row = cur.fetchone()
-            if row:
-                # si existe una fila con ese email, actualizar esa fila en lugar de la id provista
-                target_id = row[0]
+            return self.get_by_id(student_id)
 
-        values_with_target = list(values) + [target_id]
+        sql = f"UPDATE students SET {', '.join(fields)} WHERE id=?"
+        values_with_target = list(values) + [student_id]
         cur.execute(sql, tuple(values_with_target))
         self.conn.commit()
-        return cur.rowcount > 0
+        if cur.rowcount == 0:
+            return None
+        return self.get_by_id(student_id)
 
     def delete(self, student_id):
         cur = self.conn.cursor()

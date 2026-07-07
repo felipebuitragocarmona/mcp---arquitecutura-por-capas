@@ -97,7 +97,7 @@ class StudentService:
             student_id = int(student_id)
         except Exception:
             return {"error": "ID inválido"}
-        data = update.dict(exclude_unset=True)
+        data = update.model_dump(exclude_unset=True) if hasattr(update, "model_dump") else update.dict(exclude_unset=True)
         students = self.repo.get_all()
         # validar email único si se intenta cambiar
         if "email" in data:
