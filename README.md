@@ -72,7 +72,34 @@ curl -X POST http://localhost:5000/students -H "Content-Type: application/json" 
 **Notas útiles**
 - Si usas depurador (p.ej. PyCharm) y ves un `TypeError` relacionado con `loop_factory`, el arranque contiene una compatibilidad para `asyncio.run` en `main_api_rest_server.py`.
 - Pydantic muestra una advertencia si usas `orm_mode` con v2; se recomienda usar `from_attributes` cuando se migre a Pydantic v2.
-- Para desplegar en red se puede usar el siguiente comando: `cloudflared tunnel --url http://localhost:9000`, luego se debe dirigir a `https://claude.ai/` y en la sección `Ajustes>Conectores>Añadir>Añadir conector personalizado` ingresar la url obetnida en el paso atenrior.
+
+**Configuración Claude Desktop**
+Instalar Claude Desktop, luego ir a la parte inferior izquierda, donde aparece el nombre de usuario, luego sección `Configuración`, luego sección `Desarrollador`, `Editar Configuración`, y pegar el siguiente JSON.
+
+``` json
+{
+  "mcpServers": {
+    "students_architecture": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://localhost:9000/mcp",
+        "--allow-http"
+      ],
+      "env": {
+        "MCP_TRANSPORT_STRATEGY": "http-only"
+      }
+    }
+  },
+  "preferences": {
+    "coworkScheduledTasksEnabled": false,
+    "sidebarMode": "chat",
+    "coworkWebSearchEnabled": true,
+    "ccdScheduledTasksEnabled": false
+  }
+}
+```
 
 **Contacto**
 MsC Felipe Buitrago Carmona
