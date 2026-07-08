@@ -24,6 +24,7 @@ class StudentUpdate(BaseModel):
 
 class Student(StudentBase):
     id: int
+    resume_path: Optional[str] = None
     created_at: str
 
     class Config:

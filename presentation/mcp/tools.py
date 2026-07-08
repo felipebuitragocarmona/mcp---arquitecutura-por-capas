@@ -1,9 +1,54 @@
+import base64
+from typing import Any
+
 from fastmcp import FastMCP
+from fastmcp.apps.file_upload import FileUpload
 from business.student_service import StudentService
 from models.dto.student_dto import StudentCreate, StudentUpdate
 from data.repository_factory import get_repository
 
+class UserScopedUpload(FileUpload):
+  """Usa una clave estable para que FileUpload funcione en HTTP stateless."""
+
+  def _get_scope_key(self, ctx: Any):
+    request = None
+    if hasattr(ctx, "get_http_request"):
+      try:
+        request = ctx.get_http_request()
+      except Exception:
+        request = None
+
+    if request is None and hasattr(ctx, "request"):
+      request = ctx.request
+
+    headers = request.headers if request is not None and hasattr(request, "headers") else {}
+
+    for header_name in ("x-user-id", "x-student-user-id", "x-session-key"):
+      value = headers.get(header_name) if hasattr(headers, "get") else None
+      if value:
+        return f"user:{value}"
+
+    if request is not None and getattr(request, "client", None) is not None:
+      host = getattr(request.client, "host", None)
+      if host:
+        return f"ip:{host}"
+
+    return "students-default-upload-scope"
+
+  def get_file_bytes(self, name: str, ctx: Any) -> bytes:
+    scope = self._get_scope_key(ctx)
+    session_files = self._store.get(scope, {})
+    entry = session_files.get(name)
+    if entry is None:
+      available = list(session_files.keys())
+      raise ValueError(f"Archivo {name!r} no encontrado. Disponibles: {available}")
+
+    return base64.b64decode(entry["data"])
+
+
 mcp = FastMCP("students")
+upload_provider = UserScopedUpload(name="Studentsfile_manager", title="Subir hoja de vida", description="Carga el PDF de la hoja de vida del estudiante", drop_label="Suelta aqui el PDF del estudiante")
+mcp.add_provider(upload_provider)
 
 # Obtener la implementación de repositorio según la configuración (.env)
 repo = get_repository()
@@ -130,6 +175,28 @@ async def delete_student(student_id: int):
     """
     try:
       return service.delete_student(student_id)
+    except Exception as e:
+      return {"error": str(e), "type": type(e).__name__}
+
+
+@mcp.tool()
+async def upload_student_resume(student_id: int, filename: str, ctx: Any):
+    """
+    Guarda un PDF de hoja de vida previamente subido via FileUpload y registra su ruta en la base de datos.
+
+    Parameters:
+      student_id (int): Identificador del estudiante.
+      filename (str): Nombre del archivo PDF subido previamente en FileUpload.
+      ctx: Contexto de FastMCP.
+
+    Returns:
+      Diccionario con el resultado del guardado.
+    """
+    try:
+      file_bytes = upload_provider.get_file_bytes(filename, ctx)
+      return service.upload_student_resume_bytes(student_id, file_bytes, filename)
+    except ValueError as e:
+      return {"error": str(e)}
     except Exception as e:
       return {"error": str(e), "type": type(e).__name__}
 

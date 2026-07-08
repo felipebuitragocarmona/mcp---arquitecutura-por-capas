@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 from typing import List, Optional, Dict, Any
 
 from data.repository_interface import StudentRepositoryInterface
@@ -34,6 +35,7 @@ class StudentService:
             age=int(data.get("age")),
             career=data.get("career"),
             semester=data.get("semester"),
+            resume_path=data.get("resume_path"),
             created_at=data.get("created_at"),
         )
 
@@ -45,6 +47,7 @@ class StudentService:
             "age": entity.age,
             "career": entity.career,
             "semester": entity.semester,
+            "resume_path": entity.resume_path,
             "created_at": entity.created_at,
         }
 
@@ -62,6 +65,7 @@ class StudentService:
             age=student.age,
             career=student.career,
             semester=student.semester,
+            resume_path=None,
             created_at=now,
         )
         students.append(self._to_dict(entity))
@@ -119,3 +123,38 @@ class StudentService:
         if not ok:
             return {"error": "Estudiante no encontrado"}
         return {"deleted": True}
+
+    def upload_student_resume_bytes(self, student_id: int, pdf_bytes: bytes, filename: str) -> Dict[str, Any]:
+        try:
+            student_id = int(student_id)
+        except Exception:
+            return {"error": "ID inválido"}
+
+        if not pdf_bytes:
+            return {"error": "El archivo está vacío"}
+
+        student = self.repo.get_by_id(student_id)
+        if not student:
+            return {"error": f"Estudiante {student_id} no encontrado"}
+
+        extension = Path(filename).suffix.lower() if filename else ""
+        if extension != ".pdf":
+            return {"error": "La hoja de vida debe estar en formato PDF"}
+
+        resumes_dir = Path("uploads") / "resumes"
+        resumes_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path = resumes_dir / f"student_{student_id}{extension}"
+        file_path.write_bytes(pdf_bytes)
+
+        relative_path = file_path.as_posix()
+        updated = self.repo.update(student_id, {"resume_path": relative_path})
+        if not updated:
+            return {"error": "No fue posible guardar la ruta de la hoja de vida"}
+
+        return {
+            "status": "ok",
+            "student_id": student_id,
+            "ruta_guardada": relative_path,
+            "tamaño_bytes": len(pdf_bytes),
+        }

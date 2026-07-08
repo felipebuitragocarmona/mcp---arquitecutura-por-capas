@@ -19,9 +19,16 @@ class StudentRepositorySQLite(StudentRepositoryInterface):
             age INTEGER,
             career TEXT,
             semester INTEGER,
+            resume_path TEXT,
             created_at TEXT
         )
         """)
+
+        cur.execute("PRAGMA table_info(students)")
+        columns = [row[1] for row in cur.fetchall()]
+        if "resume_path" not in columns:
+            cur.execute("ALTER TABLE students ADD COLUMN resume_path TEXT")
+
         self.conn.commit()
 
     def insert(self, student):
@@ -29,43 +36,43 @@ class StudentRepositorySQLite(StudentRepositoryInterface):
         # If caller provides an id, insert it explicitly so JSON and SQLite ids stay in sync.
         if student.get("id") is not None:
             cur.execute("""
-            INSERT OR REPLACE INTO students(id,name,email,age,career,semester,created_at)
-            VALUES(?,?,?,?,?,?,?)
+            INSERT OR REPLACE INTO students(id,name,email,age,career,semester,resume_path,created_at)
+            VALUES(?,?,?,?,?,?,?,?)
             """, (
                 int(student["id"]), student["name"], student["email"], student["age"],
-                student["career"], student["semester"], student["created_at"]
+                student["career"], student["semester"], student.get("resume_path"), student["created_at"]
             ))
         else:
             cur.execute("""
-            INSERT INTO students(name,email,age,career,semester,created_at)
-            VALUES(?,?,?,?,?,?)
+            INSERT INTO students(name,email,age,career,semester,resume_path,created_at)
+            VALUES(?,?,?,?,?,?,?)
             """, (
                 student["name"], student["email"], student["age"],
-                student["career"], student["semester"], student["created_at"]
+                student["career"], student["semester"], student.get("resume_path"), student["created_at"]
             ))
         self.conn.commit()
 
     def get_all(self):
         cur = self.conn.cursor()
-        cur.execute("SELECT id,name,email,age,career,semester,created_at FROM students")
+        cur.execute("SELECT id,name,email,age,career,semester,resume_path,created_at FROM students")
         rows = cur.fetchall()
-        cols = ["id","name","email","age","career","semester","created_at"]
+        cols = ["id","name","email","age","career","semester","resume_path","created_at"]
         return [dict(zip(cols, r)) for r in rows]
 
     def get_by_id(self, student_id):
         cur = self.conn.cursor()
-        cur.execute("SELECT id,name,email,age,career,semester,created_at FROM students WHERE id=?", (student_id,))
+        cur.execute("SELECT id,name,email,age,career,semester,resume_path,created_at FROM students WHERE id=?", (student_id,))
         row = cur.fetchone()
         if not row:
             return None
-        cols = ["id","name","email","age","career","semester","created_at"]
+        cols = ["id","name","email","age","career","semester","resume_path","created_at"]
         return dict(zip(cols, row))
 
     def update(self, student_id: int, new_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         cur = self.conn.cursor()
         fields = []
         values = []
-        for k in ("name","email","age","career","semester","created_at"):
+        for k in ("name","email","age","career","semester","resume_path","created_at"):
             if k in new_data:
                 fields.append(f"{k}=?")
                 values.append(new_data[k])

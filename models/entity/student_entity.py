@@ -10,4 +10,5 @@ class StudentEntity:
     age: int
     career: Optional[str] = None
     semester: Optional[int] = None
+    resume_path: Optional[str] = None
     created_at: Optional[str] = None
