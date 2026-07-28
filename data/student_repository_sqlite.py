@@ -31,6 +31,20 @@ class StudentRepositorySQLite(StudentRepositoryInterface):
 
         self.conn.commit()
 
+    def get_table_columns(self) -> List[Dict[str, Any]]:
+        cur = self.conn.cursor()
+        cur.execute("PRAGMA table_info(students)")
+        rows = cur.fetchall()
+        return [
+            {
+                "name": row[1],
+                "type": row[2],
+                "nullable": not bool(row[3]),
+                "default": row[4],
+            }
+            for row in rows
+        ]
+
     def insert(self, student):
         cur = self.conn.cursor()
         # If caller provides an id, insert it explicitly so JSON and SQLite ids stay in sync.

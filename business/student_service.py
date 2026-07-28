@@ -160,26 +160,65 @@ class StudentService:
         }
 
     def get_students_schema(self) -> Dict[str, Any]:
+        columns = self._get_repo_columns()
+        return {"table": "students", "columns": columns}
+
+    def get_students_schema_toon(self) -> str:
+        schema = self.get_students_schema()
+        columns = schema["columns"]
+        column_names = ",".join(col["name"] for col in columns)
+        column_types = ",".join(col["type"] for col in columns)
+        nullable_flags = ",".join("1" if col.get("nullable") else "0" for col in columns)
+        defaults = ",".join("" if col.get("default") is None else str(col.get("default")) for col in columns)
+        return (
+            f'{schema["table"]}[{len(columns)}]{{name,type,nullable,default}}:\n'
+            f'{column_names}\n'
+            f'{column_types}\n'
+            f'{nullable_flags}\n'
+            f'{defaults}'
+        )
+
+    def _get_repo_columns(self) -> List[Dict[str, Any]]:
+        if hasattr(self.repo, "get_table_columns"):
+            columns = self.repo.get_table_columns()
+            if columns:
+                return columns
+
         students = self.repo.get_all()
-        sample = students[0] if students else {}
-        columns = []
-        for key, value in sample.items():
+        keys: List[str] = []
+        seen = set()
+        for student in students:
+            for key in student.keys():
+                if key not in seen:
+                    seen.add(key)
+                    keys.append(key)
+
+        columns: List[Dict[str, Any]] = []
+        for key in keys:
+            sample_value = next((student.get(key) for student in students if key in student), None)
             columns.append({
                 "name": key,
-                "type": type(value).__name__ if value is not None else "NoneType",
+                "type": self._infer_value_type(sample_value),
+                "nullable": sample_value is None,
+                "default": None,
             })
-        if not columns:
-            columns = [
-                {"name": "id", "type": "int"},
-                {"name": "name", "type": "str"},
-                {"name": "email", "type": "str"},
-                {"name": "age", "type": "int"},
-                {"name": "career", "type": "str | None"},
-                {"name": "semester", "type": "int | None"},
-                {"name": "resume_path", "type": "str | None"},
-                {"name": "created_at", "type": "str | None"},
-            ]
-        return {"table": "students", "columns": columns}
+
+        return columns
+
+    def _infer_value_type(self, value: Any) -> str:
+        if isinstance(value, bool):
+            return "bool"
+        if isinstance(value, int):
+            return "int"
+        if isinstance(value, float):
+            return "float"
+        if isinstance(value, dict):
+            return "object"
+        if isinstance(value, list):
+            return "array"
+        if value is None:
+            return "null"
+        return "str"
 
     def execute_advanced_sql(self, sql: str, params: Sequence[Any] | None = None) -> Dict[str, Any]:
         if not hasattr(self.repo, "execute_sql"):

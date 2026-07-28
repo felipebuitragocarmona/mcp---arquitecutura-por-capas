@@ -1,5 +1,4 @@
 import base64
-import json
 import os
 from typing import Any
 
@@ -59,7 +58,7 @@ repo = get_repository()
 service = StudentService(repo=repo)
 
 
-def _build_gemini_prompt(user_question: str, schema: dict[str, Any]) -> str:
+def _build_gemini_prompt(user_question: str, schema_toon: str) -> str:
     return f"""
 Eres un generador de SQL para SQLite.
 
@@ -72,8 +71,10 @@ Reglas:
 - No uses `INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `CREATE`, `REPLACE`, `ATTACH` ni `PRAGMA`.
 - Si la pregunta no se puede resolver con los campos disponibles, genera la mejor consulta posible sobre la tabla.
 
-Estructura de la tabla en formato TOON:
-{json.dumps(schema, ensure_ascii=False, indent=2)}
+Estructura de la tabla en TOON:
+```toon
+{schema_toon}
+```
 
 Pregunta del usuario:
 {user_question}
@@ -97,14 +98,14 @@ def _extract_sql_from_gemini_response(payload: dict[str, Any]) -> str:
     return text
 
 
-def _generate_sql_with_gemini(user_question: str, schema: dict[str, Any]) -> str:
+def _generate_sql_with_gemini(user_question: str, schema_toon: str) -> str:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("Falta la variable de entorno GEMINI_API_KEY")
 
     model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-    prompt = _build_gemini_prompt(user_question, schema)
+    prompt = _build_gemini_prompt(user_question, schema_toon)
     print("[consultas_avanzadas] Prompt enviado a Gemini:")
     print(prompt)
 
@@ -293,8 +294,8 @@ async def consultas_avanzadas(pregunta: str):
     ejecuta la consulta en el backend y devuelve la respuesta.
     """
     try:
-        schema = service.get_students_schema()
-        sql = _generate_sql_with_gemini(pregunta, schema)
+        schema_toon = service.get_students_schema_toon()
+        sql = _generate_sql_with_gemini(pregunta, schema_toon)
         return service.execute_advanced_sql(sql)
     except Exception as e:
         return {"error": str(e), "type": type(e).__name__}

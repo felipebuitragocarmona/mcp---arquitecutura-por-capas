@@ -18,6 +18,40 @@ class StudentRepositoryJSON(StudentRepositoryInterface):
                 return json.load(f)
         return []
 
+    def get_table_columns(self) -> List[Dict[str, Any]]:
+        students = self.load_all()
+        keys = []
+        seen = set()
+        for student in students:
+            for key in student.keys():
+                if key not in seen:
+                    seen.add(key)
+                    keys.append(key)
+
+        def infer_type(value: Any) -> str:
+            if isinstance(value, bool):
+                return "bool"
+            if isinstance(value, int):
+                return "int"
+            if isinstance(value, float):
+                return "float"
+            if isinstance(value, dict):
+                return "object"
+            if isinstance(value, list):
+                return "array"
+            if value is None:
+                return "null"
+            return "str"
+
+        columns: List[Dict[str, Any]] = []
+        for key in keys:
+            sample_value = next((student.get(key) for student in students if key in student), None)
+            columns.append({
+                "name": key,
+                "type": infer_type(sample_value),
+            })
+        return columns
+
     # Interface: get_all / insert / update / get_by_id / delete
     def get_all(self) -> List[Dict[str, Any]]:
         return self.load_all()
