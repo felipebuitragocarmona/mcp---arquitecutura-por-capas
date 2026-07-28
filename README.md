@@ -29,7 +29,8 @@ pip install -r requirements.txt
 ```
 
 **Configuración (.env)**
-- Copiar o crear un archivo `.env` en la raíz con valores como:
+- Copiar el archivo [`.env.example`](/D:/UCALDAS/Backend/PreparacionAgentes/students_architecture/.env.example) a `.env` en la raíz y ajustar los valores necesarios.
+- Si prefieres crear `.env` desde cero, usa esos mismos valores como referencia:
 
 ```
 FASTMCP_STATELESS_HTTP=true
