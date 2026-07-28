@@ -72,7 +72,9 @@ curl -X POST http://localhost:5000/students -H "Content-Type: application/json" 
 **Notas útiles**
 - Si usas depurador (p.ej. PyCharm) y ves un `TypeError` relacionado con `loop_factory`, el arranque contiene una compatibilidad para `asyncio.run` en `main_api_rest_server.py`.
 - Pydantic muestra una advertencia si usas `orm_mode` con v2; se recomienda usar `from_attributes` cuando se migre a Pydantic v2.
-- Para desplegar en red se puede usar el siguiente comando: `cloudflared tunnel --url http://localhost:9000`, luego se debe dirigir a `https://claude.ai/` y en la sección `Ajustes>Conectores>Añadir>Añadir conector personalizado` ingresar la url obetnida en el paso atenrior agregando al final /mcp, ejemplo `https://abc.trycloudflare.com/mcp`.
+- Para configurar el acceso online, abre una nueva terminal y ejecuta: `cloudflared tunnel --url http://localhost:9000`.
+- En otra terminal, abre el túnel: `cloudflared` imprimirá una URL pública similar a `https://abc.trycloudflare.com`.
+- Luego ve a `https://claude.ai/` y, en `Ajustes > Conectores > Añadir > Añadir conector personalizado`, pega la URL obtenida agregando `/mcp` al final, por ejemplo `https://abc.trycloudflare.com/mcp`.
 **Configuración Claude Desktop**
 Instalar Claude Desktop, luego ir a la parte inferior izquierda, donde aparece el nombre de usuario, luego sección `Configuración`, luego sección `Desarrollador`, `Editar Configuración`, y pegar el siguiente JSON.
 
