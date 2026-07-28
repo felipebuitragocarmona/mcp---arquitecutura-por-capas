@@ -1,6 +1,9 @@
 import base64
+import json
+import os
 from typing import Any
 
+import httpx
 from fastmcp import FastMCP
 from fastmcp.apps.file_upload import FileUpload
 from business.student_service import StudentService
@@ -54,6 +57,78 @@ mcp.add_provider(upload_provider)
 repo = get_repository()
 
 service = StudentService(repo=repo)
+
+
+def _build_gemini_prompt(user_question: str, schema: dict[str, Any]) -> str:
+    return f"""
+Eres un generador de SQL para SQLite.
+
+Debes responder SOLO con una consulta SQL válida y segura.
+
+Reglas:
+- Usa únicamente la tabla `students`.
+- Solo se permite `SELECT` o `WITH`.
+- No uses punto y coma.
+- No uses `INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `CREATE`, `REPLACE`, `ATTACH` ni `PRAGMA`.
+- Si la pregunta no se puede resolver con los campos disponibles, genera la mejor consulta posible sobre la tabla.
+
+Estructura de la tabla en formato TOON:
+{json.dumps(schema, ensure_ascii=False, indent=2)}
+
+Pregunta del usuario:
+{user_question}
+""".strip()
+
+
+def _extract_sql_from_gemini_response(payload: dict[str, Any]) -> str:
+    candidates = payload.get("candidates") or []
+    if not candidates:
+        raise ValueError("Gemini no devolvió candidatos")
+
+    content = candidates[0].get("content") or {}
+    parts = content.get("parts") or []
+    text = "".join(part.get("text", "") for part in parts).strip()
+    if not text:
+        raise ValueError("Gemini devolvió una respuesta vacía")
+
+    text = text.strip().strip("`")
+    if text.lower().startswith("sql"):
+        text = text[3:].strip().lstrip(":").strip()
+    return text
+
+
+def _generate_sql_with_gemini(user_question: str, schema: dict[str, Any]) -> str:
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("Falta la variable de entorno GEMINI_API_KEY")
+
+    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    prompt = _build_gemini_prompt(user_question, schema)
+    print("[consultas_avanzadas] Prompt enviado a Gemini:")
+    print(prompt)
+
+    with httpx.Client(timeout=60.0) as client:
+        response = client.post(
+            url,
+            params={"key": api_key},
+            json={
+                "contents": [
+                    {
+                        "role": "user",
+                        "parts": [{"text": prompt}],
+                    }
+                ],
+                "generationConfig": {
+                    "temperature": 0,
+                    "maxOutputTokens": 512,
+                },
+            },
+        )
+        response.raise_for_status()
+        payload = response.json()
+
+    return _extract_sql_from_gemini_response(payload)
 
 
 @mcp.tool()
@@ -209,6 +284,20 @@ async def get_version():
         str: Current application version.
     """
     return "1.0.1"
+
+
+@mcp.tool()
+async def consultas_avanzadas(pregunta: str):
+    """
+    Interpreta una consulta en lenguaje natural, genera SQL con Gemini Flash 2.5,
+    ejecuta la consulta en el backend y devuelve la respuesta.
+    """
+    try:
+        schema = service.get_students_schema()
+        sql = _generate_sql_with_gemini(pregunta, schema)
+        return service.execute_advanced_sql(sql)
+    except Exception as e:
+        return {"error": str(e), "type": type(e).__name__}
 
 @mcp.tool()
 def dashboard() -> str:

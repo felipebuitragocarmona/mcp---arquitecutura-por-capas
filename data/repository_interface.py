@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, Optional, List, Dict
+from typing import Any, Iterable, Optional, List, Dict, Sequence, Tuple
 
 
 class StudentRepositoryInterface(ABC):
@@ -22,3 +22,6 @@ class StudentRepositoryInterface(ABC):
     @abstractmethod
     def delete(self, student_id: int) -> bool:
         pass
+
+    def execute_sql(self, sql: str, params: Sequence[Any] | None = None) -> List[Dict[str, Any]]:
+        raise NotImplementedError

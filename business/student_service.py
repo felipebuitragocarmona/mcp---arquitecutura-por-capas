@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Sequence
 
 from data.repository_interface import StudentRepositoryInterface
 from data.student_repository_sqlite import StudentRepositorySQLite
@@ -158,3 +158,41 @@ class StudentService:
             "ruta_guardada": relative_path,
             "tamaño_bytes": len(pdf_bytes),
         }
+
+    def get_students_schema(self) -> Dict[str, Any]:
+        students = self.repo.get_all()
+        sample = students[0] if students else {}
+        columns = []
+        for key, value in sample.items():
+            columns.append({
+                "name": key,
+                "type": type(value).__name__ if value is not None else "NoneType",
+            })
+        if not columns:
+            columns = [
+                {"name": "id", "type": "int"},
+                {"name": "name", "type": "str"},
+                {"name": "email", "type": "str"},
+                {"name": "age", "type": "int"},
+                {"name": "career", "type": "str | None"},
+                {"name": "semester", "type": "int | None"},
+                {"name": "resume_path", "type": "str | None"},
+                {"name": "created_at", "type": "str | None"},
+            ]
+        return {"table": "students", "columns": columns}
+
+    def execute_advanced_sql(self, sql: str, params: Sequence[Any] | None = None) -> Dict[str, Any]:
+        if not hasattr(self.repo, "execute_sql"):
+            return {"error": "El repositorio actual no soporta ejecución SQL directa"}
+
+        if not self._is_safe_select_sql(sql):
+            return {"error": "La consulta generada no pasó la validación de seguridad"}
+
+        print(f"[consultas_avanzadas] SQL generada: {sql}")
+        rows = self.repo.execute_sql(sql, params=params)
+        return {"sql": sql, "rows": rows, "count": len(rows)}
+
+    def _is_safe_select_sql(self, sql: str) -> bool:
+        normalized = " ".join(sql.strip().lower().split())
+        blocked = (";", "insert ", "update ", "delete ", "drop ", "alter ", "create ", "replace ", "attach ", "pragma ")
+        return normalized.startswith(("select ", "with ")) and not any(token in normalized for token in blocked)

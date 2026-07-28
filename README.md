@@ -38,6 +38,8 @@ JSON_PATH=students.json
 SQLITE_PATH=students.db
 API_PORT=5000
 MCP_PORT=9000
+GEMINI_API_KEY=tu_token_de_gemini
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 Cambiar `REPO_TYPE` entre `json` y `sqlite` selecciona la implementación de persistencia.
@@ -75,6 +77,7 @@ curl -X POST http://localhost:5000/students -H "Content-Type: application/json" 
 - Para configurar el acceso online, abre una nueva terminal y ejecuta: `cloudflared tunnel --url http://localhost:9000`.
 - En otra terminal, abre el túnel: `cloudflared` imprimirá una URL pública similar a `https://abc.trycloudflare.com`.
 - Luego ve a `https://claude.ai/` y, en `Ajustes > Conectores > Añadir > Añadir conector personalizado`, pega la URL obtenida agregando `/mcp` al final, por ejemplo `https://abc.trycloudflare.com/mcp`.
+- La tool `consultas_avanzadas` usa `GEMINI_API_KEY` para generar SQL y ejecutar consultas de solo lectura sobre la tabla `students`.
 **Configuración Claude Desktop**
 Instalar Claude Desktop, luego ir a la parte inferior izquierda, donde aparece el nombre de usuario, luego sección `Configuración`, luego sección `Desarrollador`, `Editar Configuración`, y pegar el siguiente JSON.
 

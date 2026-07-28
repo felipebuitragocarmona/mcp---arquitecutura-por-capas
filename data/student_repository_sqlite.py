@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Sequence
 
 from .repository_interface import StudentRepositoryInterface
 
@@ -92,3 +92,17 @@ class StudentRepositorySQLite(StudentRepositoryInterface):
         cur.execute("DELETE FROM students WHERE id=?", (student_id,))
         self.conn.commit()
         return cur.rowcount > 0
+
+    def execute_sql(self, sql: str, params: Sequence[Any] | None = None) -> List[Dict[str, Any]]:
+        cur = self.conn.cursor()
+        normalized_sql = sql.strip().rstrip(";")
+        parameters = tuple(params or ())
+        cur.execute(normalized_sql, parameters)
+
+        if cur.description is None:
+            self.conn.commit()
+            return []
+
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        return [dict(zip(columns, row)) for row in rows]
