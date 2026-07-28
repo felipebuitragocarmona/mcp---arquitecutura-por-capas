@@ -1,6 +1,10 @@
+import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Sequence
+
+import httpx
 
 from data.repository_interface import StudentRepositoryInterface
 from data.student_repository_sqlite import StudentRepositorySQLite
@@ -230,6 +234,87 @@ class StudentService:
         print(f"[consultas_avanzadas] SQL generada: {sql}")
         rows = self.repo.execute_sql(sql, params=params)
         return {"sql": sql, "rows": rows, "count": len(rows)}
+
+    def generate_sql_with_gemini(self, user_question: str) -> Dict[str, Any]:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return {"error": "Falta la variable de entorno GEMINI_API_KEY"}
+
+        model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        schema_toon = self.get_students_schema_toon()
+        prompt = self._build_gemini_prompt(user_question, schema_toon)
+        print("[consultas_avanzadas] Prompt enviado a Gemini:")
+        print(prompt)
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        with httpx.Client(timeout=60.0) as client:
+            response = client.post(
+                url,
+                params={"key": api_key},
+                json={
+                    "contents": [
+                        {
+                            "role": "user",
+                            "parts": [{"text": prompt}],
+                        }
+                    ],
+                    "generationConfig": {
+                        "temperature": 0,
+                        "maxOutputTokens": 512,
+                    },
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+
+        sql = self._extract_sql_from_gemini_response(payload)
+        return {"schema_toon": schema_toon, "sql": sql, "raw": payload}
+
+    def run_advanced_query(self, user_question: str) -> Dict[str, Any]:
+        generated = self.generate_sql_with_gemini(user_question)
+        if "error" in generated:
+            return generated
+        return self.execute_advanced_sql(generated["sql"])
+
+    def _build_gemini_prompt(self, user_question: str, schema_toon: str) -> str:
+        return f"""
+Eres un generador de SQL para SQLite.
+
+Debes responder SOLO con una consulta SQL válida y segura.
+
+Reglas:
+- Usa únicamente la tabla `students`.
+- Solo se permite `SELECT` o `WITH`.
+- No uses punto y coma.
+- No uses `INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `CREATE`, `REPLACE`, `ATTACH` ni `PRAGMA`.
+- Si la pregunta no se puede resolver con los campos disponibles, genera la mejor consulta posible sobre la tabla.
+
+Estructura de la tabla en TOON:
+```toon
+{schema_toon}
+```
+
+Pregunta del usuario:
+{user_question}
+""".strip()
+
+    def _extract_sql_from_gemini_response(self, payload: Dict[str, Any]) -> str:
+        candidates = payload.get("candidates") or []
+        if not candidates:
+            raise ValueError("Gemini no devolvió candidatos")
+
+        content = candidates[0].get("content") or {}
+        parts = content.get("parts") or []
+        text = "".join(part.get("text", "") for part in parts).strip()
+        if not text:
+            raise ValueError("Gemini devolvió una respuesta vacía")
+
+        text = text.strip().strip("`")
+        if text.lower().startswith("sql"):
+            text = text[3:].strip().lstrip(":").strip()
+
+        normalized = re.sub(r"\s+", " ", text).strip()
+        return normalized
 
     def _is_safe_select_sql(self, sql: str) -> bool:
         normalized = " ".join(sql.strip().lower().split())

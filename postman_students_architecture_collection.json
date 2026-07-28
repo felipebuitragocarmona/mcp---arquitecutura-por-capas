@@ -1,0 +1,221 @@
+{
+  "info": {
+    "_postman_id": "b7c4d5a0-6f2a-4f4f-9e3f-2d3c6f2f7a11",
+    "name": "Students Architecture API",
+    "description": "Colección para importar en Postman con los endpoints REST del proyecto Students Architecture.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Ana\",\n  \"email\": \"ana@example.com\",\n  \"age\": 21,\n  \"career\": \"Ingenieria\",\n  \"semester\": 4\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/students",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "students"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Students",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/students",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "students"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Student Stats",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/students/stats",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "students",
+            "stats"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Student By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/students/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "students",
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Student",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Ana Maria\",\n  \"age\": 22\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/students/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "students",
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Student",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/students/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "students",
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Students Schema",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/students/schema",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "students",
+            "schema"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Students Schema TOON",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/students/schema/toon",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "students",
+            "schema",
+            "toon"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Generate SQL with Gemini",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pregunta\": \"Lista los estudiantes de ingeniería con más de 20 años\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/students/generate-sql",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "students",
+            "generate-sql"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Advanced Query",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pregunta\": \"Cuenta cuántos estudiantes hay por carrera\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/students/advanced-query",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "students",
+            "advanced-query"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5001"
+    }
+  ]
+}

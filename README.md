@@ -65,6 +65,7 @@ venv\Scripts\python.exe main_mcp_server.py
 - `GET /students/{id}` — obtener estudiante
 - `PUT /students/{id}` — actualizar
 - `DELETE /students/{id}` — eliminar
+- Ejemplos de Postman listos para importar: [postman_students_architecture_collection.json](/D:/UCALDAS/Backend/PreparacionAgentes/students_architecture/postman_students_architecture_collection.json)
 
 Ejemplo `curl` para crear un estudiante:
 
