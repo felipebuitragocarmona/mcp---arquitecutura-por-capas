@@ -40,7 +40,7 @@ SQLITE_PATH=students.db
 API_PORT=5000
 MCP_PORT=9000
 GEMINI_API_KEY=tu_token_de_gemini
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.5-flash
 ```
 
 Cambiar `REPO_TYPE` entre `json` y `sqlite` selecciona la implementación de persistencia.

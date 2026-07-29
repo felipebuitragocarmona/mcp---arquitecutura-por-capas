@@ -240,7 +240,9 @@ class StudentService:
         if not api_key:
             return {"error": "Falta la variable de entorno GEMINI_API_KEY"}
 
-        model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash").strip()
+        if model.startswith("models/"):
+            model = model.removeprefix("models/")
         schema_toon = self.get_students_schema_toon()
         prompt = self._build_gemini_prompt(user_question, schema_toon)
         print("[consultas_avanzadas] Prompt enviado a Gemini:")
@@ -248,27 +250,59 @@ class StudentService:
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         with httpx.Client(timeout=60.0) as client:
-            response = client.post(
-                url,
-                params={"key": api_key},
-                json={
-                    "contents": [
-                        {
-                            "role": "user",
-                            "parts": [{"text": prompt}],
-                        }
-                    ],
-                    "generationConfig": {
-                        "temperature": 0,
-                        "maxOutputTokens": 512,
+            try:
+                response = client.post(
+                    url,
+                    headers={"x-goog-api-key": api_key},
+                    json={
+                        "contents": [
+                            {
+                                "role": "user",
+                                "parts": [{"text": prompt}],
+                            }
+                        ],
+                        "generationConfig": {
+                            "temperature": 0,
+                            "maxOutputTokens": 512,
+                        },
                     },
-                },
-            )
-            response.raise_for_status()
-            payload = response.json()
+                )
+                response.raise_for_status()
+                payload = response.json()
+            except httpx.HTTPStatusError as exc:
+                return self._gemini_http_error(exc.response, model)
+            except httpx.RequestError as exc:
+                return {
+                    "error": "No fue posible conectar con la API de Gemini",
+                    "detail": str(exc),
+                }
+            except ValueError:
+                return {"error": "Gemini devolvió una respuesta que no es JSON válido"}
 
-        sql = self._extract_sql_from_gemini_response(payload)
+        try:
+            sql = self._extract_sql_from_gemini_response(payload)
+        except (KeyError, TypeError, ValueError) as exc:
+            return {"error": str(exc)}
         return {"schema_toon": schema_toon, "sql": sql, "raw": payload}
+
+    def _gemini_http_error(self, response: httpx.Response, model: str) -> Dict[str, Any]:
+        detail = response.reason_phrase
+        try:
+            payload = response.json()
+            api_error = payload.get("error", {})
+            detail = api_error.get("message") or detail
+        except ValueError:
+            pass
+
+        message = f"Gemini rechazó la solicitud (HTTP {response.status_code})"
+        if response.status_code == 404:
+            message = f"El modelo Gemini '{model}' no está disponible para esta clave"
+
+        return {
+            "error": message,
+            "detail": detail,
+            "status_code": response.status_code,
+        }
 
     def run_advanced_query(self, user_question: str) -> Dict[str, Any]:
         generated = self.generate_sql_with_gemini(user_question)
